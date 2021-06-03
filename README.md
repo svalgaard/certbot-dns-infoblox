@@ -64,14 +64,14 @@ Examples
 To acquire a single certificate for both ``example.com`` and
 ``*.example.com``, waiting 100 seconds for DNS propagation:
 
-   certbot certonly \
-     --authenticator dns-infoblox \
-     --dns-infoblox-credentials /etc/letsencrypt/.secrets/domain.tld.ini \
-     --dns-infoblox-propagation-seconds 100 \
-     --agree-tos \
-     --rsa-key-size 4096 \
-     -d 'example.com' \
-     -d '*.example.com'
+    certbot certonly \
+    --authenticator dns-infoblox \
+    --dns-infoblox-credentials /etc/letsencrypt/.secrets/domain.tld.ini \
+    --dns-infoblox-propagation-seconds 100 \
+    --agree-tos \
+    --rsa-key-size 4096 \
+    -d 'example.com' \
+    -d '*.example.com'
 
 
 Notes
