@@ -19,16 +19,9 @@ Named Arguments
 To start using DNS authentication for Infoblox, pass the following arguments on
 certbot's command line:
 
-============================================================ ==============================================
-``--authenticator certbot-dns-infoblox:dns-infoblox``        Select the authenticator plugin (Required)
-
-``--certbot-dns-infoblox:dns-infoblox-credentials``          Infoblox remote user credentials INI file.
-                                                             (Default: /etc/letsencrypt/infoblox.ini)
-
-``--certbot-dns-infoblox:dns-infoblox-propagation-seconds``  Waiting time for DNS to propagate before asking
-                                                             the ACME server to verify the DNS record.
-                                                             (Default: 10)
-============================================================ ==============================================
+| ``--authenticator certbot-dns-infoblox:dns-infoblox`` | Select the authenticator plugin (Required) |
+| ``--certbot-dns-infoblox:dns-infoblox-credentials`` | Infoblox remote user credentials INI file. (Default: ``/etc/letsencrypt/infoblox.ini``) |
+| ``--certbot-dns-infoblox:dns-infoblox-propagation-seconds`` | Waiting time for DNS to propagate before asking the ACME server to verify the DNS record. (Default: 10) |
 
 If you are using certbot >= 1.0, you can skip the `certbot-dns-infoblox:`
 in the above arguments.
@@ -38,7 +31,6 @@ Credentials
 -----------
 An example ``credentials.ini`` file:
 
-.. code-block:: ini
     #
     # Sample Infoblox INI file
     #
@@ -72,8 +64,6 @@ Examples
 To acquire a single certificate for both ``example.com`` and
 ``*.example.com``, waiting 100 seconds for DNS propagation:
 
-.. code-block:: bash
-
    certbot certonly \
      --authenticator dns-infoblox \
      --dns-infoblox-credentials /etc/letsencrypt/.secrets/domain.tld.ini \
@@ -82,6 +72,7 @@ To acquire a single certificate for both ``example.com`` and
      --rsa-key-size 4096 \
      -d 'example.com' \
      -d '*.example.com'
+
 
 Notes
 -----
