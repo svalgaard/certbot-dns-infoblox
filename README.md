@@ -6,6 +6,10 @@ Infoblox DNS Authenticator plugin for Certbot
 This plugin automates the process of completing a ``dns-01`` challenge by
 creating, and subsequently removing, TXT records using the Infoblox Remote API.
 
+In order to get a certificate from Let’s Encrypt, you have to demonstrate control over the domain name. Usually, this is done using HTTP where you upload a specific file to your website. Using DNS / Infoblox as a backend, you are no longer required to run a webserver, and can furthermore prove ownership of domain names only accessible internally, and even of wildcard DNS names as, e.g., `*.example.com`.
+
+Note that all certificates issued by Certificate Authorities as, e.g., Let's Encrypt are added to a distributed database called the [certificate transparency logs](https://certificate.transparency.dev/) (searchable at e.g. [crt.sh](https://crt.sh/)). In particular when issuing internal certificates, you should be careful about revealing names of internal servers, etc.
+
 
 Installation
 ------------
@@ -79,5 +83,3 @@ Notes
 
 This is based on the work in [certbot-dns-ipsconfig](https://github.com/m42e/certbot-dns-ispconfig)
 and the package [infoblox-client](https://github.com/infobloxopen/infoblox-client) python package.
-
-Note that all your issued certificates can be found in public databases, e.g., [crt.sh](https://crt.sh/).
