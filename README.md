@@ -23,9 +23,11 @@ Named Arguments
 To start using DNS authentication for Infoblox, pass the following arguments on
 certbot's command line:
 
-| ``--authenticator certbot-dns-infoblox:dns-infoblox`` | Select the authenticator plugin (Required) |
-| ``--certbot-dns-infoblox:dns-infoblox-credentials`` | Infoblox remote user credentials INI file. (Default: ``/etc/letsencrypt/infoblox.ini``) |
-| ``--certbot-dns-infoblox:dns-infoblox-propagation-seconds`` | Waiting time for DNS to propagate before asking the ACME server to verify the DNS record. (Default: 10) |
+Argument | Description
+-|-
+``--authenticator certbot-dns-infoblox:dns-infoblox`` | Select the authenticator plugin (Required)
+``--certbot-dns-infoblox:dns-infoblox-credentials`` | Infoblox remote user credentials INI file. (Default: ``/etc/letsencrypt/infoblox.ini``)
+``--certbot-dns-infoblox:dns-infoblox-propagation-seconds`` | Waiting time for DNS to propagate before asking the ACME server to verify the DNS record. (Default: 10)
 
 If you are using certbot >= 1.0, you can skip the `certbot-dns-infoblox:`
 in the above arguments.
@@ -37,6 +39,7 @@ An example ``credentials.ini`` file:
 
     #
     # Sample Infoblox INI file
+    # Default location /etc/letsencrypt/infoblox.ini
     #
     dns_infoblox_hostname="infoblox.example.net"
     dns_infoblox_username="my-wapi-user"
@@ -82,4 +85,4 @@ Notes
 -----
 
 This is based on the work in [certbot-dns-ipsconfig](https://github.com/m42e/certbot-dns-ispconfig)
-and the package [infoblox-client](https://github.com/infobloxopen/infoblox-client) python package.
+and the [infoblox-client](https://github.com/infobloxopen/infoblox-client) python package.
