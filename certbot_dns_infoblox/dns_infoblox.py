@@ -50,8 +50,8 @@ class Authenticator(dns_common.DNSAuthenticator):
                 "hostname": "Hostname for Infoblox REST API.",
                 "username": "Username for Infoblox REST API.",
                 "password": "Password for Infoblox REST API.",
-                "view": "View to use for TXT entries "
-                        "(leave blank is view is not necessary)"
+                "view": "View to use for TXT entries (leave blank if not necessary).",
+                "ca_bundle": "Path to CA bundle for Infoblox SSL verification (optional)."
             },
         )
 
@@ -60,12 +60,15 @@ class Authenticator(dns_common.DNSAuthenticator):
 
     def _get_infoblox_client(self):
         if not self.infoclient:
+            # Determine whether to use custom CA bundle or default trust
+            ssl_verify_value = self.credentials.conf("ca_bundle") or True
+
             self.infoclient = {
                 'connector': infoblox_client.connector.Connector({
                     'host': self.credentials.conf("hostname"),
                     'username': self.credentials.conf("username"),
                     'password': self.credentials.conf("password"),
-                    'ssl_verify': True
+                    'ssl_verify': ssl_verify_value
                 })
             }
             if self.credentials.conf("view"):
@@ -101,5 +104,4 @@ class Authenticator(dns_common.DNSAuthenticator):
             **self._get_infoblox_record(validation_name, validation, False)
         )
         for txt in txts:
-            # FIXME
-            print(f'Please delete this txt record by yourself: {txt}')
+            print(f'Please delete this TXT record manually: {txt}')
