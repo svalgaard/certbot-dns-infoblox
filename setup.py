@@ -1,10 +1,9 @@
-
 from setuptools import find_packages, setup
 
 install_requires = [
     "acme>=0.29.0",
     "certbot>=0.34.0",
-    'infoblox-client>=0.5.0',
+    "infoblox-client>=0.5.0",
     "setuptools",
 ]
 
@@ -12,14 +11,12 @@ install_requires = [
 with open("README.md") as f:
     long_description = f.read()
 
-docs_extras = [
-]
+docs_extras = []
 
 setup(
     name="certbot-dns-infoblox",
     use_scm_version=True,
-    setup_requires=['setuptools_scm'],
-
+    setup_requires=["setuptools_scm"],
     description="Infoblox DNS Authenticator plugin for Certbot",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -47,7 +44,6 @@ setup(
         "Topic :: System :: Systems Administration",
         "Topic :: Utilities",
     ],
-
     packages=find_packages(),
     include_package_data=True,
     install_requires=install_requires,

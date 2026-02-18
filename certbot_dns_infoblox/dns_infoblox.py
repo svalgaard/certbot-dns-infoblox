@@ -1,4 +1,5 @@
 """DNS Authenticator for Infoblox."""
+
 import logging
 import time
 
@@ -20,8 +21,10 @@ class Authenticator(dns_common.DNSAuthenticator):
     dns-01 challenge.
     """
 
-    description = ("Obtain certificates using a DNS TXT record "
-                   "(if you are using Infoblox for DNS).")
+    description = (
+        "Obtain certificates using a DNS TXT record "
+        "(if you are using Infoblox for DNS)."
+    )
     ttl = 120
 
     def __init__(self, *args, **kwargs):
@@ -33,8 +36,11 @@ class Authenticator(dns_common.DNSAuthenticator):
         super(Authenticator, cls).add_parser_arguments(
             add, default_propagation_seconds=10
         )
-        add("credentials", help="Infoblox credentials INI file.",
-            default='/etc/letsencrypt/infoblox.ini')
+        add(
+            "credentials",
+            help="Infoblox credentials INI file.",
+            default="/etc/letsencrypt/infoblox.ini",
+        )
 
     def more_info(self):  # pylint: disable=missing-docstring,no-self-use
         return (
@@ -51,7 +57,7 @@ class Authenticator(dns_common.DNSAuthenticator):
                 "username": "Username for Infoblox REST API.",
                 "password": "Password for Infoblox REST API.",
                 "view": "View to use for TXT entries (leave blank if not necessary).",
-                "ca_bundle": "Path to CA bundle for Infoblox SSL verification (optional)."
+                "ca_bundle": "Path to CA bundle for Infoblox SSL verification (optional).",
             },
         )
 
@@ -64,34 +70,37 @@ class Authenticator(dns_common.DNSAuthenticator):
             ssl_verify_value = self.credentials.conf("ca_bundle") or True
 
             self.infoclient = {
-                'connector': infoblox_client.connector.Connector({
-                    'host': self.credentials.conf("hostname"),
-                    'username': self.credentials.conf("username"),
-                    'password': self.credentials.conf("password"),
-                    'ssl_verify': ssl_verify_value
-                })
+                "connector": infoblox_client.connector.Connector(
+                    {
+                        "host": self.credentials.conf("hostname"),
+                        "username": self.credentials.conf("username"),
+                        "password": self.credentials.conf("password"),
+                        "ssl_verify": ssl_verify_value,
+                    }
+                )
             }
             if self.credentials.conf("view"):
-                self.infoclient['view'] = self.credentials.conf("view")
+                self.infoclient["view"] = self.credentials.conf("view")
 
         return self.infoclient.copy()
 
     def _get_infoblox_record(self, validation_name, validation, create):
         record = self._get_infoblox_client()
-        record['name'] = validation_name
-        record['text'] = validation
+        record["name"] = validation_name
+        record["text"] = validation
         if create:
-            record['ttl'] = self.ttl
+            record["ttl"] = self.ttl
             username = self.credentials.conf("username")
-            record['comment'] = time.strftime(
-                f'%Y-%m-%d %H:%M:%S: certbot-auto-{username}')
+            record["comment"] = time.strftime(
+                f"%Y-%m-%d %H:%M:%S: certbot-auto-{username}"
+            )
 
         return record
 
     def _perform(self, domain, validation_name, validation):
         txt = infoblox_client.objects.TXTRecord.create(
             **self._get_infoblox_record(validation_name, validation, True),
-            check_if_exists=False
+            check_if_exists=False,
         )
         self.infotxts.append(txt)
 
@@ -105,4 +114,4 @@ class Authenticator(dns_common.DNSAuthenticator):
             **self._get_infoblox_record(validation_name, validation, False)
         )
         for txt in txts:
-            print(f'Please delete this TXT record manually: {txt}')
+            print(f"Please delete this TXT record manually: {txt}")
