@@ -87,7 +87,8 @@ class Authenticator(dns_common.DNSAuthenticator):
 
     def _perform(self, domain, validation_name, validation):
         txt = infoblox_client.objects.TXTRecord.create(
-            **self._get_infoblox_record(validation_name, validation, True)
+            **self._get_infoblox_record(validation_name, validation, True),
+            check_if_exists=False
         )
         self.infotxts.append(txt)
 
