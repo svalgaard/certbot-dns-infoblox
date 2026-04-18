@@ -1,19 +1,12 @@
 """DNS Authenticator for Infoblox."""
 
-import logging
 import time
 
-import infoblox_client.connector
-import infoblox_client.objects
-import zope.interface
-from certbot import interfaces
 from certbot.plugins import dns_common
 
-logger = logging.getLogger(__name__)
+from ._infoblox import InfobloxClient
 
 
-@zope.interface.implementer(interfaces.IAuthenticator)
-@zope.interface.provider(interfaces.IPluginFactory)
 class Authenticator(dns_common.DNSAuthenticator):
     """DNS Authenticator for Infoblox
 
@@ -32,7 +25,7 @@ class Authenticator(dns_common.DNSAuthenticator):
         self.credentials = None
 
     @classmethod
-    def add_parser_arguments(cls, add):  # pylint: disable=arguments-differ
+    def add_parser_arguments(cls, add, default_propagation_seconds: int = 120):
         super(Authenticator, cls).add_parser_arguments(
             add, default_propagation_seconds=10
         )
@@ -42,10 +35,10 @@ class Authenticator(dns_common.DNSAuthenticator):
             default="/etc/letsencrypt/infoblox.ini",
         )
 
-    def more_info(self):  # pylint: disable=missing-docstring,no-self-use
+    def more_info(self):
         return (
             "This plugin configures a DNS TXT record to respond to a "
-            "dns-01 challenge using the Infoblox Remote REST API."
+            "dns-01 challenge using the Infoblox WAPI."
         )
 
     def _setup_credentials(self):
@@ -53,65 +46,42 @@ class Authenticator(dns_common.DNSAuthenticator):
             "credentials",
             "Infoblox credentials INI file",
             {
-                "hostname": "Hostname for Infoblox REST API.",
-                "username": "Username for Infoblox REST API.",
-                "password": "Password for Infoblox REST API.",
+                "hostname": "Hostname for Infoblox WAPI.",
+                "username": "Username for Infoblox WAPI.",
+                "password": "Password for Infoblox WAPI.",
                 "view": "View to use for TXT entries (leave blank if not necessary).",
                 "ca_bundle": "Path to CA bundle for Infoblox SSL verification (optional).",
             },
         )
 
     infoclient = None
-    infotxts = []
 
     def _get_infoblox_client(self):
         if not self.infoclient:
-            # Determine whether to use custom CA bundle or default trust
             ssl_verify_value = self.credentials.conf("ca_bundle") or True
-
-            self.infoclient = {
-                "connector": infoblox_client.connector.Connector(
-                    {
-                        "host": self.credentials.conf("hostname"),
-                        "username": self.credentials.conf("username"),
-                        "password": self.credentials.conf("password"),
-                        "ssl_verify": ssl_verify_value,
-                    }
-                )
-            }
-            if self.credentials.conf("view"):
-                self.infoclient["view"] = self.credentials.conf("view")
-
-        return self.infoclient.copy()
-
-    def _get_infoblox_record(self, validation_name, validation, create):
-        record = self._get_infoblox_client()
-        record["name"] = validation_name
-        record["text"] = validation
-        if create:
-            record["ttl"] = self.ttl
-            username = self.credentials.conf("username")
-            record["comment"] = time.strftime(
-                f"%Y-%m-%d %H:%M:%S: certbot-auto-{username}"
+            view = self.credentials.conf("view") or None
+            self.infoclient = InfobloxClient(
+                host=self.credentials.conf("hostname"),
+                username=self.credentials.conf("username"),
+                password=self.credentials.conf("password"),
+                ssl_verify=ssl_verify_value,
+                view=view,
             )
-
-        return record
+        return self.infoclient
 
     def _perform(self, domain, validation_name, validation):
-        txt = infoblox_client.objects.TXTRecord.create(
-            **self._get_infoblox_record(validation_name, validation, True),
-            check_if_exists=False,
+        client = self._get_infoblox_client()
+        username = self.credentials.conf("username")
+        comment = time.strftime(f"%Y-%m-%d %H:%M:%S: certbot-{username}")
+        client.create_txt_record(
+            name=validation_name,
+            text=validation,
+            ttl=self.ttl,
+            comment=comment,
         )
-        self.infotxts.append(txt)
 
     def _cleanup(self, domain, validation_name, validation):
-        for txt in self.infotxts:
-            if txt.name == validation_name and txt.text == validation:
-                txt.delete()
-                return
-
-        txts = infoblox_client.objects.TXTRecord.search_all(
-            **self._get_infoblox_record(validation_name, validation, False)
-        )
+        client = self._get_infoblox_client()
+        txts = client.search_txt_records(name=validation_name, text=validation)
         for txt in txts:
-            print(f"Please delete this TXT record manually: {txt}")
+            client.delete_txt_record(txt["_ref"])
