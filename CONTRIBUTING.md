@@ -1,9 +1,28 @@
 # Developer Guide
 
+This document covers everything needed to work on **certbot-dns-infoblox**:
+setting up a development environment, running the test suite, and building
+Ubuntu-compatible `.deb` packages.
+
 ## Prerequisites
 
 - Python 3.8 or later
 - Git
+
+
+## Project structure
+
+```
+certbot_dns_infoblox/
+    __init__.py          # Package docstring and plugin documentation
+    _infoblox.py         # Minimal Infoblox WAPI client using requests
+    dns_infoblox.py      # Certbot DNS Authenticator plugin
+tests/
+    test_infoblox.py     # Unit tests for the WAPI client
+    test_dns_infoblox.py # Unit tests for the Authenticator plugin
+debian/                 # Debian/Ubuntu packaging files
+```
+
 
 ## Setting up the development environment
 
@@ -25,15 +44,8 @@ pip install -e ".[test]"
 ## Running tests
 
 ```bash
-pytest
+python -m unittest discover -s tests -v
 ```
-
-With verbose output:
-
-```bash
-pytest -v
-```
-
 With coverage report:
 
 ```bash
@@ -41,24 +53,75 @@ pip install pytest-cov
 pytest --cov=certbot_dns_infoblox --cov-report=term-missing
 ```
 
-## Project structure
+Tests use `unittest.mock` only — no live Infoblox instance is required.
 
+
+## Testing against a live certbot
+
+Install in editable mode to be able to edit the files without installing them.
+
+```bash
+pip install -e .
 ```
-certbot_dns_infoblox/
-    __init__.py          # Package docstring and plugin documentation
-    _infoblox.py         # Minimal Infoblox WAPI client using requests
-    dns_infoblox.py      # Certbot DNS Authenticator plugin
-tests/
-    test_infoblox.py     # Unit tests for the WAPI client
-    test_dns_infoblox.py # Unit tests for the Authenticator plugin
+
+Verify the plugin is visible to certbot:
+
+```bash
+certbot plugins --configurator dns-infoblox
 ```
 
-## Architecture
+Do a dry-run against the Let's Encrypt staging CA:
 
-The plugin is split into two modules:
+```bash
+certbot certonly --test-cert --dry-run \
+    --authenticator dns-infoblox \
+    --dns-infoblox-credentials /etc/letsencrypt/infoblox.ini \
+    --dns-infoblox-propagation-seconds 100 \
+    -d 'example.com'
+```
 
-- **`_infoblox.py`** — A standalone HTTP client for the Infoblox WAPI (v2.10). Uses `requests.Session` with basic auth. Supports creating, searching, and deleting TXT records.
-- **`dns_infoblox.py`** — The certbot `DNSAuthenticator` subclass that uses `InfobloxClient` to fulfil `dns-01` challenges.
+
+## Building a `.deb` package
+
+### Prerequisites (Ubuntu/Debian)
+
+```bash
+sudo apt-get install \
+    debhelper dh-python devscripts \
+    python3-all python3-setuptools python3-setuptools-scm \
+    python3-certbot python3-requests python3-pytest \
+    build-essential pybuild-plugin-pyproject
+```
+
+### Build
+
+From the repository root:
+
+```bash
+dpkg-buildpackage -us -uc -b
+```
+
+The resulting `.deb` is placed one directory above the repo root (`../`).
+
+
+## Building inside Docker (any distro)
+
+To build for Ubuntu 24.04 (Noble) without affecting your host system:
+
+```bash
+docker run --rm -v "$PWD:/src" -w /src ubuntu:24.04 bash -c "
+  apt-get update && apt-get install -y --no-install-recommends \
+    debhelper dh-python devscripts \
+    python3-all python3-setuptools python3-setuptools-scm \
+    python3-certbot python3-requests python3-pytest \
+    build-essential pybuild-plugin-pyproject && \
+  dpkg-buildpackage -us -uc -b && \
+  cp ../*.deb /src/
+"
+```
+
+The resulting `.deb` is placed in the repo root (`../`).
+
 
 ## Building a release
 
