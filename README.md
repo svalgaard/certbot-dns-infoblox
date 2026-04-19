@@ -29,6 +29,17 @@ names of internal servers, etc.
 pip install certbot-dns-infoblox
 ```
 
+**Ubuntu `.deb` package:**
+
+Pre-built `.deb` packages for Ubuntu 22.04 (Jammy) and 24.04 (Noble) are
+attached to each [GitHub Release](https://github.com/svalgaard/certbot-dns-infoblox/releases).
+
+```bash
+# Download the .deb for your Ubuntu release from the Releases page, then:
+sudo dpkg -i python3-certbot-dns-infoblox_*.deb
+sudo apt-get install -f   # resolve any missing dependencies
+```
+
 ## Named Arguments
 
 To start using DNS authentication for Infoblox, pass the following
@@ -132,4 +143,5 @@ Inspired by [certbot-dns-ispconfig](https://github.com/m42e/certbot-dns-ispconfi
 ## Developing / Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on setting up a
-development environment and running the test suite.
+development environment, running the test suite, building `.deb`
+packages, and the CI/CD release workflow.
