@@ -21,14 +21,12 @@ class Authenticator(dns_common.DNSAuthenticator):
     ttl = 120
 
     def __init__(self, *args, **kwargs):
-        super(Authenticator, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.credentials = None
 
     @classmethod
     def add_parser_arguments(cls, add, default_propagation_seconds: int = 120):
-        super(Authenticator, cls).add_parser_arguments(
-            add, default_propagation_seconds=10
-        )
+        super().add_parser_arguments(add, default_propagation_seconds=10)
         add(
             "credentials",
             help="Infoblox credentials INI file.",
@@ -50,7 +48,9 @@ class Authenticator(dns_common.DNSAuthenticator):
                 "username": "Username for Infoblox WAPI.",
                 "password": "Password for Infoblox WAPI.",
                 "view": "View to use for TXT entries (leave blank if not necessary).",
-                "ca_bundle": "Path to CA bundle for Infoblox SSL verification (optional).",
+                "ca_bundle": (
+                    "Path to CA bundle for Infoblox SSL verification (optional)."
+                ),
             },
         )
 

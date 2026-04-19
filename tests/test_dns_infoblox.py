@@ -1,6 +1,6 @@
 """Tests for certbot_dns_infoblox.dns_infoblox (InfobloxClient-based implementation)."""
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -37,7 +37,7 @@ def authenticator():
 class TestAuthenticatorInit:
     def test_init(self):
         with patch.object(Authenticator, "__init__", lambda self, *a, **kw: None):
-            auth = Authenticator()
+            Authenticator()
         # The real __init__ calls super().__init__ and sets credentials = None
         # We just verify the class can be instantiated
 
