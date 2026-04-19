@@ -53,4 +53,10 @@ include-package-data = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+
 [tool.setuptools_scm]

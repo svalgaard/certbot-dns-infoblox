@@ -21,6 +21,10 @@ tests/
     test_infoblox.py     # Unit tests for the WAPI client
     test_dns_infoblox.py # Unit tests for the Authenticator plugin
 debian/                 # Debian/Ubuntu packaging files
+.github/workflows/
+    ci.yml              # Runs tests on every push / PR
+    build-deb.yml       # Builds .deb packages on version tags
+    publish-pypi.yml    # Publish new releases at PyPi
 ```
 
 
@@ -41,11 +45,31 @@ Install the package in editable mode with test dependencies:
 pip install -e ".[test]"
 ```
 
+## Pre-commit hooks
+
+The project uses [pre-commit](https://pre-commit.com/) to run
+[ruff](https://docs.astral.sh/ruff/) linting/formatting and other checks
+before each commit.
+
+Install the hooks once after cloning:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+To run the hooks manually against all files:
+
+```bash
+pre-commit run --all-files
+```
+
 ## Running tests
 
 ```bash
-python -m unittest discover -s tests -v
+pytest -v
 ```
+
 With coverage report:
 
 ```bash
@@ -111,10 +135,10 @@ To build for Ubuntu 24.04 (Noble) without affecting your host system:
 ```bash
 docker run --rm -v "$PWD:/src" -w /src ubuntu:24.04 bash -c "
   apt-get update && apt-get install -y --no-install-recommends \
-    debhelper dh-python devscripts \
-    python3-all python3-setuptools python3-setuptools-scm \
-    python3-certbot python3-requests python3-pytest \
-    build-essential pybuild-plugin-pyproject && \
+    build-essential debhelper devscripts dh-python \
+    pybuild-plugin-pyproject python3-all python3-certbot \
+    python3-pytest python3-requests \
+    python3-setuptools python3-setuptools-scm && \
   dpkg-buildpackage -us -uc -b && \
   cp ../*.deb /src/
 "
@@ -131,6 +155,14 @@ Versioning is handled by `setuptools_scm` from git tags. To build a distribution
 pip install build
 python -m build
 ```
+
+
+## Cutting a release
+
+1. Update `debian/changelog` with the new version and release notes.
+2. Tag the commit: `git tag v1.2.3 && git push origin v1.2.3`
+3. GitHub Actions builds the `.deb` files and attaches them to the release automatically. Further, a new release is uploaded to PyPi.
+
 
 ## Configuration
 
