@@ -5,8 +5,10 @@ certbot-dns-infoblox (0.4.0-1) unstable; urgency=medium
   * Added Debian/Ubuntu packaging.
   * Added GitHub Actions CI/CD pipeline.
   * Migrated project metadata from setup.py/setup.cfg to pyproject.toml.
+  * Make view and ca_bundle optional parameters
+  * Add optional ssl_verify parameter
 
- -- Jens Svalgaard Kohrt <github@svalgaard.net>  Sun, 19 Apr 2026 22:18:00 +0200
+ -- Jens Svalgaard Kohrt <github@svalgaard.net>  Wed, 22 Apr 2026 19:33:00 +0200
 
 certbot-dns-infoblox (0.3.0-1) unstable; urgency=medium
 
