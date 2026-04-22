@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: gny
+Upstream-Name: certbot-dns-infoblox
 Upstream-Contact: Jens Svalgaard Kohrt <github@svalgaard.net>
-Source: https://github.com/svalgaard/gny
+Source: https://github.com/svalgaard/certbot-dns-infoblox
 
 Files: *
 Copyright: 2026 Jens Svalgaard Kohrt

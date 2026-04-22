@@ -36,7 +36,7 @@ attached to each [GitHub Release](https://github.com/svalgaard/certbot-dns-infob
 
 ```bash
 # Download the .deb for your Ubuntu release from the Releases page, then
-# run the following to isntall the .deb and all dependencies:
+# run the following to install the .deb and all dependencies:
 sudo apt install -f ./python3-certbot-dns-infoblox_*.deb
 ```
 
