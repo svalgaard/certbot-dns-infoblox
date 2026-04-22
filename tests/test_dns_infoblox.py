@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from certbot import errors
 
 from certbot_dns_infoblox.dns_infoblox import Authenticator
 
@@ -26,9 +27,10 @@ def authenticator():
         "username": "admin",
         "password": "secret",
         "view": "",
+        "ssl_verify": "",
         "ca_bundle": "",
     }
-    creds.conf = MagicMock(side_effect=lambda key: conf_values[key])
+    creds.conf = MagicMock(side_effect=lambda key: conf_values.get(key))
     auth.credentials = creds
     auth._conf_values = conf_values  # expose for test mutation
     return auth
@@ -80,8 +82,76 @@ class TestSetupCredentials:
         assert "hostname" in args[0][2]
         assert "username" in args[0][2]
         assert "password" in args[0][2]
-        assert "view" in args[0][2]
-        assert "ca_bundle" in args[0][2]
+
+    def test_view_is_optional(self, authenticator):
+        """view should not be in the required_variables dict."""
+        authenticator._configure_credentials = MagicMock()
+        authenticator._setup_credentials()
+        required_variables = authenticator._configure_credentials.call_args[0][2]
+        assert "view" not in required_variables
+
+    def test_ssl_verify_is_optional(self, authenticator):
+        """ssl_verify should not be in the required_variables dict."""
+        authenticator._configure_credentials = MagicMock()
+        authenticator._setup_credentials()
+        required_variables = authenticator._configure_credentials.call_args[0][2]
+        assert "ssl_verify" not in required_variables
+
+    def test_ca_bundle_is_optional(self, authenticator):
+        """ca_bundle should not be in the required_variables dict."""
+        authenticator._configure_credentials = MagicMock()
+        authenticator._setup_credentials()
+        required_variables = authenticator._configure_credentials.call_args[0][2]
+        assert "ca_bundle" not in required_variables
+
+    def test_validator_is_passed(self, authenticator):
+        authenticator._configure_credentials = MagicMock()
+        authenticator._setup_credentials()
+        kwargs = authenticator._configure_credentials.call_args[1]
+        assert kwargs["validator"] is Authenticator._validate_credentials
+
+
+class TestValidateCredentials:
+    def test_accepts_empty(self):
+        """No ssl_verify or ca_bundle set should be accepted."""
+        creds = MagicMock()
+        creds.conf = MagicMock(side_effect=lambda key: None)
+        Authenticator._validate_credentials(creds)
+
+    def test_accepts_ssl_verify_true(self):
+        values = {"ssl_verify": "true", "ca_bundle": None}
+        creds = MagicMock()
+        creds.conf = MagicMock(side_effect=lambda key: values.get(key))
+        Authenticator._validate_credentials(creds)
+
+    def test_accepts_ssl_verify_false(self):
+        values = {"ssl_verify": "false", "ca_bundle": None}
+        creds = MagicMock()
+        creds.conf = MagicMock(side_effect=lambda key: values.get(key))
+        Authenticator._validate_credentials(creds)
+
+    def test_rejects_invalid_ssl_verify(self):
+        values = {"ssl_verify": "maybe", "ca_bundle": None}
+        creds = MagicMock()
+        creds.conf = MagicMock(side_effect=lambda key: values.get(key))
+        with pytest.raises(errors.PluginError, match="Invalid value for ssl_verify"):
+            Authenticator._validate_credentials(creds)
+
+    @patch("certbot_dns_infoblox.dns_infoblox.os.path.exists", return_value=True)
+    def test_accepts_existing_ca_bundle(self, mock_exists):
+        values = {"ssl_verify": None, "ca_bundle": "/path/to/ca.pem"}
+        creds = MagicMock()
+        creds.conf = MagicMock(side_effect=lambda key: values.get(key))
+        Authenticator._validate_credentials(creds)
+        mock_exists.assert_called_once_with("/path/to/ca.pem")
+
+    @patch("certbot_dns_infoblox.dns_infoblox.os.path.exists", return_value=False)
+    def test_rejects_nonexistent_ca_bundle(self, mock_exists):
+        values = {"ssl_verify": None, "ca_bundle": "/no/such/path.pem"}
+        creds = MagicMock()
+        creds.conf = MagicMock(side_effect=lambda key: values.get(key))
+        with pytest.raises(errors.PluginError, match="ca_bundle path does not exist"):
+            Authenticator._validate_credentials(creds)
 
 
 class TestGetInfobloxClient:
@@ -98,6 +168,45 @@ class TestGetInfobloxClient:
         )
         assert client is mock_client
 
+    def test_ssl_verify_false(self, mock_client, authenticator):
+        from certbot_dns_infoblox.dns_infoblox import InfobloxClient
+
+        authenticator._conf_values["ssl_verify"] = "false"
+        authenticator._get_infoblox_client()
+        InfobloxClient.assert_called_once_with(
+            host="infoblox.example.net",
+            username="admin",
+            password="secret",
+            ssl_verify=False,
+            view=None,
+        )
+
+    def test_ssl_verify_False(self, mock_client, authenticator):
+        from certbot_dns_infoblox.dns_infoblox import InfobloxClient
+
+        authenticator._conf_values["ssl_verify"] = "False"
+        authenticator._get_infoblox_client()
+        InfobloxClient.assert_called_once_with(
+            host="infoblox.example.net",
+            username="admin",
+            password="secret",
+            ssl_verify=False,
+            view=None,
+        )
+
+    def test_ssl_verify_true(self, mock_client, authenticator):
+        from certbot_dns_infoblox.dns_infoblox import InfobloxClient
+
+        authenticator._conf_values["ssl_verify"] = "true"
+        authenticator._get_infoblox_client()
+        InfobloxClient.assert_called_once_with(
+            host="infoblox.example.net",
+            username="admin",
+            password="secret",
+            ssl_verify=True,
+            view=None,
+        )
+
     def test_with_ca_bundle(self, mock_client, authenticator):
         from certbot_dns_infoblox.dns_infoblox import InfobloxClient
 
@@ -108,6 +217,21 @@ class TestGetInfobloxClient:
             username="admin",
             password="secret",
             ssl_verify="/path/to/ca.pem",
+            view=None,
+        )
+
+    def test_ssl_verify_false_overrides_ca_bundle(self, mock_client, authenticator):
+        """ssl_verify=false takes precedence over ca_bundle."""
+        from certbot_dns_infoblox.dns_infoblox import InfobloxClient
+
+        authenticator._conf_values["ssl_verify"] = "false"
+        authenticator._conf_values["ca_bundle"] = "/path/to/ca.pem"
+        authenticator._get_infoblox_client()
+        InfobloxClient.assert_called_once_with(
+            host="infoblox.example.net",
+            username="admin",
+            password="secret",
+            ssl_verify=False,
             view=None,
         )
 
@@ -122,6 +246,22 @@ class TestGetInfobloxClient:
             password="secret",
             ssl_verify=True,
             view="external",
+        )
+
+    def test_without_optional_params(self, mock_client, authenticator):
+        """Client should work when optional params return None."""
+        from certbot_dns_infoblox.dns_infoblox import InfobloxClient
+
+        authenticator._conf_values["view"] = None
+        authenticator._conf_values["ssl_verify"] = None
+        authenticator._conf_values["ca_bundle"] = None
+        authenticator._get_infoblox_client()
+        InfobloxClient.assert_called_once_with(
+            host="infoblox.example.net",
+            username="admin",
+            password="secret",
+            ssl_verify=True,
+            view=None,
         )
 
     def test_caches_client(self, mock_client, authenticator):

@@ -64,12 +64,16 @@ dns_infoblox_hostname = infoblox.example.net
 dns_infoblox_username = my-wapi-user
 dns_infoblox_password = 5f4dcc3b5aa765d61d8327deb882cf99
 
-# Optional: Infoblox DNS view (leave blank if not required)
-dns_infoblox_view = ""
+# Optional: Infoblox DNS view (omit this if not required)
+# dns_infoblox_view = ""
 
-# Optional: path to a custom CA bundle for SSL verification.
-# Leave blank to use the system default trust store.
-dns_infoblox_ca_bundle = ""
+# Optional: set to false to disable SSL verification (default: true).
+# WARNING: disabling TLS verification exposes you to MITM attacks.
+# dns_infoblox_ssl_verify = true
+
+# Optional: path to a custom CA bundle (file or directory) for SSL
+# verification.
+# dns_infoblox_ca_bundle = "/path/to/ca-bundle.crt"
 ```
 
 Restrict access to the file:
@@ -89,23 +93,23 @@ behalf. Certbot will warn you with "Unsafe permissions on credentials
 configuration file" if the file is readable by other users.
 
 
-## SSL verification (`ca_bundle`)
+## SSL verification
 
 By default the plugin verifies the Infoblox WAPI server's TLS
 certificate against the system trust store. If your Infoblox uses a
 certificate signed by an internal or private CA, point
-`dns_infoblox_ca_bundle` at the CA bundle (PEM format):
+`dns_infoblox_ca_bundle` at the CA bundle file or directory (PEM format):
 
 ```ini
 dns_infoblox_ca_bundle = /etc/ssl/certs/my-internal-ca.pem
 ```
 
 To disable certificate verification entirely (not recommended for
-production):
+production), set `dns_infoblox_ssl_verify` to `false`:
 
 ```ini
 # WARNING: disabling TLS verification exposes you to MITM attacks.
-dns_infoblox_ca_bundle = false
+dns_infoblox_ssl_verify = false
 ```
 
 

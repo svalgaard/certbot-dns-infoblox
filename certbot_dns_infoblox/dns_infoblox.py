@@ -1,7 +1,9 @@
 """DNS Authenticator for Infoblox."""
 
+import os
 import time
 
+from certbot import errors
 from certbot.plugins import dns_common
 
 from ._infoblox import InfobloxClient
@@ -47,18 +49,32 @@ class Authenticator(dns_common.DNSAuthenticator):
                 "hostname": "Hostname for Infoblox WAPI.",
                 "username": "Username for Infoblox WAPI.",
                 "password": "Password for Infoblox WAPI.",
-                "view": "View to use for TXT entries (leave blank if not necessary).",
-                "ca_bundle": (
-                    "Path to CA bundle for Infoblox SSL verification (optional)."
-                ),
             },
+            validator=self._validate_credentials,
         )
+
+    @staticmethod
+    def _validate_credentials(credentials):
+        ssl_verify = credentials.conf("ssl_verify")
+        if ssl_verify and ssl_verify.lower() not in ("true", "false"):
+            raise errors.PluginError(
+                f"Invalid value for ssl_verify: {ssl_verify!r}. Must be true or false."
+            )
+
+        ca_bundle = credentials.conf("ca_bundle")
+        if ca_bundle:
+            if not os.path.exists(ca_bundle):
+                raise errors.PluginError(f"ca_bundle path does not exist: {ca_bundle}")
 
     infoclient = None
 
     def _get_infoblox_client(self):
         if not self.infoclient:
-            ssl_verify_value = self.credentials.conf("ca_bundle") or True
+            ssl_verify_str = self.credentials.conf("ssl_verify")
+            if ssl_verify_str and ssl_verify_str.lower() == "false":
+                ssl_verify_value = False
+            else:
+                ssl_verify_value = self.credentials.conf("ca_bundle") or True
             view = self.credentials.conf("view") or None
             self.infoclient = InfobloxClient(
                 host=self.credentials.conf("hostname"),
