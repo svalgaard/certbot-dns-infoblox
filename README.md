@@ -1,88 +1,151 @@
-certbot-dns-infoblox
-====================
+# certbot-dns-infoblox
 
 Infoblox DNS Authenticator plugin for Certbot
 
-This plugin automates the process of completing a ``dns-01`` challenge by
-creating, and subsequently removing, TXT records using the Infoblox Remote API.
+This plugin automates the process of completing a ``dns-01`` challenge
+by creating, and subsequently removing, TXT records using the Infoblox
+Remote API.
 
-In order to get a certificate from Let’s Encrypt, you have to demonstrate control over the domain name. Usually, this is done using HTTP where you upload a specific file to your website. Using DNS / Infoblox as a backend, you are no longer required to run a webserver, and can furthermore prove ownership of domain names only accessible internally, and even of wildcard DNS names as, e.g., `*.example.com`.
+In order to get a certificate from Let’s Encrypt, you have to
+demonstrate control over the domain name. Usually, this is done using
+HTTP where you upload a specific file to your website. Using DNS /
+Infoblox as a backend, you are no longer required to run a webserver,
+and can furthermore prove ownership of domain names only accessible
+internally, and even of wildcard DNS names as, e.g., `*.example.com`.
 
-Note that all certificates issued by Certificate Authorities as, e.g., Let's Encrypt are added to a distributed database called the [certificate transparency logs](https://certificate.transparency.dev/) (searchable at e.g. [crt.sh](https://crt.sh/)). In particular when issuing internal certificates, you should be careful about revealing names of internal servers, etc.
+Note that all certificates issued by Certificate Authorities as, e.g.,
+Let's Encrypt are added to a distributed database called the
+[certificate transparency logs](https://certificate.transparency.dev/)
+(searchable at e.g. [crt.sh](https://crt.sh/)). In particular when
+issuing internal certificates, you should be careful about revealing
+names of internal servers, etc.
 
 
-Installation
-------------
+## Installation
+
+**From PyPI (all platforms):**
+
 ```
 pip install certbot-dns-infoblox
 ```
 
-Named Arguments
----------------
+**Ubuntu `.deb` package:**
 
-To start using DNS authentication for Infoblox, pass the following arguments on
-certbot's command line:
+Pre-built `.deb` packages for Ubuntu 22.04 (Jammy) and 24.04 (Noble) are
+attached to each [GitHub Release](https://github.com/svalgaard/certbot-dns-infoblox/releases).
 
-Argument | Description
--|-
-``--authenticator certbot-dns-infoblox:dns-infoblox`` | Select the authenticator plugin (Required)
-``--certbot-dns-infoblox:dns-infoblox-credentials`` | Infoblox remote user credentials INI file. (Default: ``/etc/letsencrypt/infoblox.ini``)
-``--certbot-dns-infoblox:dns-infoblox-propagation-seconds`` | Waiting time for DNS to propagate before asking the ACME server to verify the DNS record. (Default: 10)
+```bash
+# Download the .deb for your Ubuntu release from the Releases page, then
+# run the following to install the .deb and all dependencies:
+sudo apt install -f ./python3-certbot-dns-infoblox_*.deb
+```
 
-If you are using certbot >= 1.0, you can skip the `certbot-dns-infoblox:`
-in the above arguments.
+## Named Arguments
+
+To start using DNS authentication for Infoblox, pass the following
+arguments on certbot's command line:
+
+| Argument | Description |
+|---|---|
+| `--authenticator dns-infoblox` | Select the authenticator plugin (Required) |
+| `--dns-infoblox-credentials` | Path to Infoblox credentials INI file (Default: `/etc/letsencrypt/infoblox.ini`) |
+| `--dns-infoblox-propagation-seconds` | Waiting time for DNS to propagate before asking the ACME server to verify the DNS record. (Default: 60) |
 
 
-Credentials
------------
-An example ``credentials.ini`` file:
+## Credentials
 
-    #
-    # Sample Infoblox INI file
-    # Default location /etc/letsencrypt/infoblox.ini
-    #
-    dns_infoblox_hostname="infoblox.example.net"
-    dns_infoblox_username="my-wapi-user"
-    dns_infoblox_password="5f4dcc3b5aa765d61d8327deb882cf99"
-    dns_infoblox_view=""
+Create an INI file (default location `/etc/letsencrypt/infoblox.ini`):
+
+```ini
+#
+# Infoblox credentials - keep this file private (chmod 600)
+#
+dns_infoblox_hostname = infoblox.example.net
+dns_infoblox_username = my-wapi-user
+dns_infoblox_password = 5f4dcc3b5aa765d61d8327deb882cf99
+
+# Optional: Infoblox DNS view (omit this if not required)
+# dns_infoblox_view = ""
+
+# Optional: set to false to disable SSL verification (default: true).
+# WARNING: disabling TLS verification exposes you to MITM attacks.
+# dns_infoblox_ssl_verify = true
+
+# Optional: path to a custom CA bundle (file or directory) for SSL
+# verification.
+# dns_infoblox_ca_bundle = "/path/to/ca-bundle.crt"
+```
+
+Restrict access to the file:
+
+```
+chmod 600 /etc/letsencrypt/infoblox.ini
+```
 
 The path to this file can be provided interactively or using the
-``--dns-infoblox-credentials`` command-line argument. Certbot
-records the path to this file for use during renewal, but does not store the
+`--dns-infoblox-credentials` command-line argument. Certbot records
+the path to this file for use during renewal, but does not store the
 file's contents.
 
-**CAUTION:** You should protect these API credentials as you would the
-password to your infoblox account. Users who can read this file can use these
-credentials to issue arbitrary API calls on your behalf. Users who can cause
-Certbot to run using these credentials can complete a ``dns-01`` challenge to
-acquire new certificates or revoke existing certificates for associated
-domains, even if those domains aren't being managed by this server.
-
-Certbot will emit a warning if it detects that the credentials file can be
-accessed by other users on your system. The warning reads "Unsafe permissions
-on credentials configuration file", followed by the path to the credentials
-file. This warning will be emitted each time Certbot uses the credentials file,
-including for renewal, and cannot be silenced except by addressing the issue
-(e.g., by using a command like ``chmod 600`` to restrict access to the file).
+**CAUTION:** Protect these credentials as you would any password.
+Users who can read this file can issue arbitrary WAPI calls on your
+behalf. Certbot will warn you with "Unsafe permissions on credentials
+configuration file" if the file is readable by other users.
 
 
-Examples
---------
-To acquire a single certificate for both ``example.com`` and
-``*.example.com``, waiting 100 seconds for DNS propagation:
+## SSL verification
 
-    certbot certonly \
-    --authenticator dns-infoblox \
-    --dns-infoblox-credentials /etc/letsencrypt/.secrets/domain.tld.ini \
-    --dns-infoblox-propagation-seconds 100 \
-    --agree-tos \
-    --rsa-key-size 4096 \
-    -d 'example.com' \
-    -d '*.example.com'
+By default the plugin verifies the Infoblox WAPI server's TLS
+certificate against the system trust store. If your Infoblox uses a
+certificate signed by an internal or private CA, point
+`dns_infoblox_ca_bundle` at the CA bundle file or directory (PEM format):
+
+```ini
+dns_infoblox_ca_bundle = /etc/ssl/certs/my-internal-ca.pem
+```
+
+To disable certificate verification entirely (not recommended for
+production), set `dns_infoblox_ssl_verify` to `false`:
+
+```ini
+# WARNING: disabling TLS verification exposes you to MITM attacks.
+dns_infoblox_ssl_verify = false
+```
 
 
-Notes
------
+## Examples
 
-This is based on the work in [certbot-dns-ipsconfig](https://github.com/m42e/certbot-dns-ispconfig)
-and the [infoblox-client](https://github.com/infobloxopen/infoblox-client) python package.
+Acquire a certificate for `example.com` and `*.example.com`, waiting
+10 seconds for DNS propagation:
+
+```
+certbot certonly \
+  --authenticator dns-infoblox \
+  --dns-infoblox-credentials /etc/letsencrypt/infoblox.ini \
+  --dns-infoblox-propagation-seconds 10 \
+  -d 'example.com' \
+  -d '*.example.com'
+```
+
+Renew all certificates non-interactively (e.g. cron job or systemd
+timer):
+
+```
+certbot renew --quiet
+```
+
+
+## Notes
+
+This plugin communicates with the Infoblox WAPI REST API directly
+using [`requests`](https://requests.readthedocs.io/), with no
+dependency on the `infoblox-client` package.
+
+Inspired by [certbot-dns-ispconfig](https://github.com/m42e/certbot-dns-ispconfig).
+
+
+## Developing / Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on setting up a
+development environment, running the test suite, building `.deb`
+packages, and the CI/CD release workflow.

@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68", "setuptools_scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "certbot-dns-infoblox"
+dynamic = ["version"]
+description = "Infoblox DNS Authenticator plugin for Certbot"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [{name = "Jens Svalgaard Kohrt", email = "github@svalgaard.net"}]
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Plugins",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Security",
+    "Topic :: System :: Installation/Setup",
+    "Topic :: System :: Networking",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "certbot>=2.0",
+    "requests>=2.20",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/svalgaard/certbot-dns-infoblox"
+
+[project.entry-points."certbot.plugins"]
+dns-infoblox = "certbot_dns_infoblox.dns_infoblox:Authenticator"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+
+[tool.setuptools_scm]

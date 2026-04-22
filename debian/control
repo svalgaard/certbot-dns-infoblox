@@ -1,0 +1,28 @@
+Source: certbot-dns-infoblox
+Section: net
+Priority: optional
+Maintainer: Jens Svalgaard Kohrt <github@svalgaard.net>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-sequence-python3,
+ python3-all,
+ python3-setuptools,
+ python3-setuptools-scm,
+ python3-certbot,
+ python3-requests,
+ pybuild-plugin-pyproject,
+Standards-Version: 4.6.2
+Homepage: https://github.com/svalgaard/certbot-dns-infoblox
+Rules-Requires-Root: no
+
+Package: python3-certbot-dns-infoblox
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: Infoblox DNS Authenticator plugin for Certbot
+ This plugin automates the process of completing a dns-01 challenge by
+ creating, and subsequently removing, TXT records using the Infoblox
+ WAPI REST API.
+ .
+ It enables obtaining TLS certificates from Let's Encrypt (or any other
+ ACME CA) for domains served by Infoblox DNS, including internal and
+ wildcard names.

@@ -1,0 +1,36 @@
+certbot-dns-infoblox (0.4.0-1) unstable; urgency=medium
+
+  * Replaced infoblox-client dependency with minimal built-in WAPI client
+    using requests directly against the Infoblox WAPI REST API.
+  * Added Debian/Ubuntu packaging.
+  * Added GitHub Actions CI/CD pipeline.
+  * Migrated project metadata from setup.py/setup.cfg to pyproject.toml.
+
+ -- Jens Svalgaard Kohrt <github@svalgaard.net>  Sun, 19 Apr 2026 22:18:00 +0200
+
+certbot-dns-infoblox (0.3.0-1) unstable; urgency=medium
+
+  * Update documentation
+  * Add ca_bundle support to allow custom CA trust path for Infoblox SSL verification
+  * Fix misc. errors
+  * Fix code formatting
+
+ -- Jens Svalgaard Kohrt <github@svalgaard.net>  Wed, 18 Feb 2026 13:00:35 +0100
+
+certbot-dns-infoblox (0.2.0-1) unstable; urgency=medium
+
+  * Fixed location of files.
+
+ -- Jens Svalgaard Kohrt <github@svalgaard.net>  Sat, 18 Sep 2021 22:26:02 +0200
+
+certbot-dns-infoblox (0.1.1-1) unstable; urgency=medium
+
+  * Fixed documentation
+
+ -- Jens Svalgaard Kohrt <github@svalgaard.net>  Thu, 3 Jun 2021 23:31:25 +0200
+
+certbot-dns-infoblox (0.1.0-1) unstable; urgency=medium
+
+  * Initial Version
+
+ -- Jens Svalgaard Kohrt <github@svalgaard.net>  Thu, 3 Jun 2021 23:25:33 +0200
