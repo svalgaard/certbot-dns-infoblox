@@ -33,6 +33,23 @@ class InfobloxClient:
         self.session.verify = ssl_verify
         self.session.headers.update({"Content-Type": "application/json"})
 
+    @staticmethod
+    def _raise_for_status(resp: requests.Response) -> None:
+        """Raise an HTTPError with the Infoblox WAPI error detail, if available."""
+        try:
+            resp.raise_for_status()
+        except requests.HTTPError:
+            detail = ""
+            try:
+                detail = f": {resp.json()}"
+            except Exception:
+                if resp.text:
+                    detail = f": {resp.text}"
+            raise requests.HTTPError(
+                f"{resp.status_code} {resp.reason} for {resp.url}{detail}",
+                response=resp,
+            ) from None
+
     def create_txt_record(
         self,
         name: str,
@@ -48,8 +65,10 @@ class InfobloxClient:
             payload["view"] = self.view
         if comment is not None:
             payload["comment"] = comment
-        resp = self.session.post(self.base_url + "record:txt", json=payload)
-        resp.raise_for_status()
+        resp = self.session.post(
+            self.base_url + "record:txt", json=payload, timeout=self.timeout
+        )
+        self._raise_for_status(resp)
         return resp.json()
 
     def search_txt_records(
@@ -61,11 +80,13 @@ class InfobloxClient:
             params["text"] = text
         if self.view is not None:
             params["view"] = self.view
-        resp = self.session.get(self.base_url + "record:txt", params=params)
-        resp.raise_for_status()
+        resp = self.session.get(
+            self.base_url + "record:txt", params=params, timeout=self.timeout
+        )
+        self._raise_for_status(resp)
         return resp.json()
 
     def delete_txt_record(self, ref: str) -> None:
         """Delete a TXT record by its object reference."""
-        resp = self.session.delete(self.base_url + ref)
-        resp.raise_for_status()
+        resp = self.session.delete(self.base_url + ref, timeout=self.timeout)
+        self._raise_for_status(resp)
