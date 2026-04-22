@@ -35,9 +35,9 @@ Pre-built `.deb` packages for Ubuntu 22.04 (Jammy) and 24.04 (Noble) are
 attached to each [GitHub Release](https://github.com/svalgaard/certbot-dns-infoblox/releases).
 
 ```bash
-# Download the .deb for your Ubuntu release from the Releases page, then:
-sudo dpkg -i python3-certbot-dns-infoblox_*.deb
-sudo apt-get install -f   # resolve any missing dependencies
+# Download the .deb for your Ubuntu release from the Releases page, then
+# run the following to isntall the .deb and all dependencies:
+sudo apt install -f ./python3-certbot-dns-infoblox_*.deb
 ```
 
 ## Named Arguments
