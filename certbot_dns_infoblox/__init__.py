@@ -12,7 +12,7 @@ Named Arguments
 ``--dns-infoblox-propagation-seconds``    The number of seconds to wait for DNS
                                           to propagate before asking the ACME
                                           server to verify the DNS record.
-                                          (Default: 10)
+                                          (Default: 60)
 ========================================  =====================================
 
 Credentials

@@ -39,6 +39,10 @@ class TestInit:
         )
         assert mock_session.verify == "/path/to/ca.pem"
 
+    def test_custom_timeout(self, mock_session):
+        client = InfobloxClient("ib.example.net", "admin", "secret", timeout=60)
+        assert client.timeout == 60
+
     def test_content_type_header(self, mock_session):
         InfobloxClient("ib.example.net", "admin", "secret")
         assert mock_session.headers["Content-Type"] == "application/json"

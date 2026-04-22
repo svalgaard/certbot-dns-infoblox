@@ -49,7 +49,7 @@ arguments on certbot's command line:
 |---|---|
 | `--authenticator dns-infoblox` | Select the authenticator plugin (Required) |
 | `--dns-infoblox-credentials` | Path to Infoblox credentials INI file (Default: `/etc/letsencrypt/infoblox.ini`) |
-| `--dns-infoblox-propagation-seconds` | Waiting time for DNS to propagate before asking the ACME server to verify the DNS record. (Default: 120) |
+| `--dns-infoblox-propagation-seconds` | Waiting time for DNS to propagate before asking the ACME server to verify the DNS record. (Default: 60) |
 
 
 ## Credentials
