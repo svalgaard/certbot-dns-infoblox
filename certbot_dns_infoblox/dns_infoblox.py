@@ -1,5 +1,6 @@
 """DNS Authenticator for Infoblox."""
 
+import logging
 import os
 import time
 
@@ -7,6 +8,8 @@ from certbot import errors
 from certbot.plugins import dns_common
 
 from ._infoblox import InfobloxClient
+
+logger = logging.getLogger(__name__)
 
 
 class Authenticator(dns_common.DNSAuthenticator):
@@ -83,12 +86,16 @@ class Authenticator(dns_common.DNSAuthenticator):
                 ssl_verify=ssl_verify_value,
                 view=view,
             )
+            logger.debug(
+                "Created Infoblox client for %s", self.credentials.conf("hostname")
+            )
         return self.infoclient
 
     def _perform(self, domain, validation_name, validation):
         client = self._get_infoblox_client()
         username = self.credentials.conf("username")
         comment = time.strftime(f"%Y-%m-%d %H:%M:%S: certbot-auto-{username}")
+        logger.debug("Creating TXT record for %s", validation_name)
         client.create_txt_record(
             name=validation_name,
             text=validation,
@@ -99,5 +106,6 @@ class Authenticator(dns_common.DNSAuthenticator):
     def _cleanup(self, domain, validation_name, validation):
         client = self._get_infoblox_client()
         txts = client.search_txt_records(name=validation_name, text=validation)
+        logger.debug("Found %d TXT record(s) for %s", len(txts), validation_name)
         for txt in txts:
             client.delete_txt_record(txt["_ref"])

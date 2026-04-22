@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import logging
+
 import requests
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 30
 
