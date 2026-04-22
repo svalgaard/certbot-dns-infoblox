@@ -283,7 +283,7 @@ class TestPerform:
         assert call_kwargs["text"] == "token123"
         assert call_kwargs["ttl"] == 120
         assert "view" not in call_kwargs
-        assert "certbot-admin" in call_kwargs["comment"]
+        assert "certbot-auto-admin" in call_kwargs["comment"]
 
     def test_creates_with_view(self, mock_client, authenticator):
         authenticator._conf_values["view"] = "external"

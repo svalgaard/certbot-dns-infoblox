@@ -88,7 +88,7 @@ class Authenticator(dns_common.DNSAuthenticator):
     def _perform(self, domain, validation_name, validation):
         client = self._get_infoblox_client()
         username = self.credentials.conf("username")
-        comment = time.strftime(f"%Y-%m-%d %H:%M:%S: certbot-{username}")
+        comment = time.strftime(f"%Y-%m-%d %H:%M:%S: certbot-auto-{username}")
         client.create_txt_record(
             name=validation_name,
             text=validation,
