@@ -24,6 +24,7 @@ class TestInit:
         assert mock_session.verify is True
         assert client.base_url == "https://ib.example.net/wapi/v2.10/"
         assert client.view is None
+        assert client.timeout == 30
 
     def test_with_view(self, mock_session):
         client = InfobloxClient("ib.example.net", "admin", "secret", view="external")
@@ -60,6 +61,7 @@ class TestCreateTxtRecord:
         mock_session.post.assert_called_once_with(
             "https://ib.example.net/wapi/v2.10/record:txt",
             json={"name": "_acme.example.com", "text": "token123"},
+            timeout=30,
         )
         mock_session.post.return_value.raise_for_status.assert_called_once()
         assert ref == "record:txt/ZG5z:_acme.example.com/default"
@@ -84,6 +86,7 @@ class TestCreateTxtRecord:
                 "view": "external",
                 "comment": "auto-created",
             },
+            timeout=30,
         )
 
     def test_raises_on_error(self, mock_session):
@@ -111,6 +114,7 @@ class TestSearchTxtRecords:
                 "name": "_acme.example.com",
                 "_return_fields": "name,text,view",
             },
+            timeout=30,
         )
         mock_session.get.return_value.raise_for_status.assert_called_once()
         assert len(results) == 1
@@ -130,6 +134,7 @@ class TestSearchTxtRecords:
                 "view": "external",
                 "_return_fields": "name,text,view",
             },
+            timeout=30,
         )
 
     def test_raises_on_error(self, mock_session):
@@ -149,7 +154,8 @@ class TestDeleteTxtRecord:
         client.delete_txt_record("record:txt/ZG5z:_acme.example.com/default")
 
         mock_session.delete.assert_called_once_with(
-            "https://ib.example.net/wapi/v2.10/record:txt/ZG5z:_acme.example.com/default"
+            "https://ib.example.net/wapi/v2.10/record:txt/ZG5z:_acme.example.com/default",
+            timeout=30,
         )
         mock_session.delete.return_value.raise_for_status.assert_called_once()
 

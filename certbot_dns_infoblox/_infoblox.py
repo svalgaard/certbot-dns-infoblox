@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import requests
 
+DEFAULT_TIMEOUT = 30
+
 
 class InfobloxClient:
     """A minimal client for the Infoblox WAPI, covering only TXT record operations."""
@@ -17,9 +19,11 @@ class InfobloxClient:
         password: str,
         ssl_verify: bool | str = True,
         view: str | None = None,
+        timeout: int = DEFAULT_TIMEOUT,
     ) -> None:
         self.base_url = f"https://{host}/wapi/v{self.WAPI_VERSION}/"
         self.view = view
+        self.timeout = timeout
         self.session = requests.Session()
         self.session.auth = (username, password)
         self.session.verify = ssl_verify
