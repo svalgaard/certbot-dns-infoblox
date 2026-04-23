@@ -1,3 +1,9 @@
+certbot-dns-infoblox (0.4.1-1) unstable; urgency=medium
+
+  * Fix .deb CI/CD pipeline.
+
+ -- Jens Svalgaard Kohrt <github@svalgaard.net>  Thu, 23 Apr 2026 08:25:00 +0200
+
 certbot-dns-infoblox (0.4.0-1) unstable; urgency=medium
 
   * Replaced infoblox-client dependency with minimal built-in WAPI client
