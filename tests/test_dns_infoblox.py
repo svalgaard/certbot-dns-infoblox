@@ -158,8 +158,8 @@ class TestValidateCredentials:
         with pytest.raises(errors.PluginError, match="ca_bundle path does not exist"):
             Authenticator._validate_credentials(creds)
 
-    @patch("certbot_dns_infoblox.dns_infoblox.os.path.exists", return_value=True)
-    def test_accepts_existing_translation_table(self, mock_exists):
+    @patch("certbot_dns_infoblox.dns_infoblox.os.path.isfile", return_value=True)
+    def test_accepts_existing_translation_table(self, mock_isfile):
         values = {
             "ssl_verify": None,
             "ca_bundle": None,
@@ -168,10 +168,10 @@ class TestValidateCredentials:
         creds = MagicMock()
         creds.conf = MagicMock(side_effect=lambda key: values.get(key))
         Authenticator._validate_credentials(creds)
-        mock_exists.assert_called_with("/path/to/table.json")
+        mock_isfile.assert_called_with("/path/to/table.json")
 
-    @patch("certbot_dns_infoblox.dns_infoblox.os.path.exists", return_value=False)
-    def test_rejects_nonexistent_translation_table(self, mock_exists):
+    @patch("certbot_dns_infoblox.dns_infoblox.os.path.isfile", return_value=False)
+    def test_rejects_nonexistent_translation_table(self, mock_isfile):
         values = {
             "ssl_verify": None,
             "ca_bundle": None,
