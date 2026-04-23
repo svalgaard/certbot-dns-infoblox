@@ -1,5 +1,7 @@
 """Tests for certbot_dns_infoblox.dns_infoblox (InfobloxClient-based implementation)."""
 
+import json
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -20,6 +22,8 @@ def authenticator():
     auth = Authenticator.__new__(Authenticator)
     auth.infoclient = None
     auth.ttl = 120
+    auth._translation_table = None
+    auth._translation_table_loaded = False
 
     creds = MagicMock()
     conf_values = {
@@ -29,6 +33,7 @@ def authenticator():
         "view": "",
         "ssl_verify": "",
         "ca_bundle": "",
+        "translation_table": "",
     }
     creds.conf = MagicMock(side_effect=lambda key: conf_values.get(key))
     auth.credentials = creds
@@ -153,6 +158,33 @@ class TestValidateCredentials:
         with pytest.raises(errors.PluginError, match="ca_bundle path does not exist"):
             Authenticator._validate_credentials(creds)
 
+    @patch("certbot_dns_infoblox.dns_infoblox.os.path.isfile", return_value=True)
+    def test_accepts_existing_translation_table(self, mock_isfile):
+        values = {
+            "ssl_verify": None,
+            "ca_bundle": None,
+            "translation_table": "/path/to/table.json",
+        }
+        creds = MagicMock()
+        creds.conf = MagicMock(side_effect=lambda key: values.get(key))
+        Authenticator._validate_credentials(creds)
+        mock_isfile.assert_called_with("/path/to/table.json")
+
+    @patch("certbot_dns_infoblox.dns_infoblox.os.path.isfile", return_value=False)
+    def test_rejects_nonexistent_translation_table(self, mock_isfile):
+        values = {
+            "ssl_verify": None,
+            "ca_bundle": None,
+            "translation_table": "/no/such/table.json",
+        }
+        creds = MagicMock()
+        creds.conf = MagicMock(side_effect=lambda key: values.get(key))
+        with pytest.raises(
+            errors.PluginError,
+            match="translation_table path does not exist",
+        ):
+            Authenticator._validate_credentials(creds)
+
 
 class TestGetInfobloxClient:
     def test_basic(self, mock_client, authenticator):
@@ -273,6 +305,101 @@ class TestGetInfobloxClient:
         assert client1 is client2
 
 
+class TestLoadTranslationTable:
+    def test_no_path_configured(self, authenticator):
+        """Returns None when no translation_table path is configured."""
+        assert authenticator._load_translation_table() is None
+
+    def test_valid_json_file(self, authenticator, tmp_path):
+        table = {"example.com": "sub.example.org"}
+        table_file = tmp_path / "table.json"
+        table_file.write_text(json.dumps(table))
+        authenticator._conf_values["translation_table"] = str(table_file)
+        result = authenticator._load_translation_table()
+        assert result == table
+
+    def test_caches_result(self, authenticator, tmp_path):
+        table = {"example.com": "sub.example.org"}
+        table_file = tmp_path / "table.json"
+        table_file.write_text(json.dumps(table))
+        authenticator._conf_values["translation_table"] = str(table_file)
+        result1 = authenticator._load_translation_table()
+        os.remove(table_file)
+        result2 = authenticator._load_translation_table()
+        assert result1 is result2
+
+    def test_invalid_json(self, authenticator, tmp_path):
+        table_file = tmp_path / "bad.json"
+        table_file.write_text("{not valid json}")
+        authenticator._conf_values["translation_table"] = str(table_file)
+        with pytest.raises(errors.PluginError, match="not valid JSON"):
+            authenticator._load_translation_table()
+
+    def test_file_not_found(self, authenticator):
+        authenticator._conf_values["translation_table"] = "/no/such/file.json"
+        with pytest.raises(errors.PluginError, match="file not found"):
+            authenticator._load_translation_table()
+
+    def test_invalid_structure_list(self, authenticator, tmp_path):
+        table_file = tmp_path / "bad.json"
+        table_file.write_text(json.dumps(["a", "b"]))
+        authenticator._conf_values["translation_table"] = str(table_file)
+        with pytest.raises(errors.PluginError, match="mapping strings to strings"):
+            authenticator._load_translation_table()
+
+    def test_invalid_structure_int_values(self, authenticator, tmp_path):
+        table_file = tmp_path / "bad.json"
+        table_file.write_text(json.dumps({"example.com": 123}))
+        authenticator._conf_values["translation_table"] = str(table_file)
+        with pytest.raises(errors.PluginError, match="mapping strings to strings"):
+            authenticator._load_translation_table()
+
+
+class TestTranslateDomain:
+    def test_no_table_returns_unchanged(self, authenticator):
+        name = "_acme-challenge.example.com"
+        assert authenticator._translate_domain(name) == name
+
+    def test_simple_suffix_match(self, authenticator):
+        authenticator._translation_table = {"example.com": "sub.example.org"}
+        authenticator._translation_table_loaded = True
+        result = authenticator._translate_domain("_acme-challenge.example.com")
+        assert result == "_acme-challenge.sub.example.org"
+
+    def test_exact_domain_match(self, authenticator):
+        authenticator._translation_table = {"example.com": "other.org"}
+        authenticator._translation_table_loaded = True
+        assert authenticator._translate_domain("example.com") == "other.org"
+
+    def test_longest_suffix_wins(self, authenticator):
+        authenticator._translation_table = {
+            "example.com": "fallback.org",
+            "sub.example.com": "specific.org",
+        }
+        authenticator._translation_table_loaded = True
+        result = authenticator._translate_domain("_acme-challenge.sub.example.com")
+        assert result == "_acme-challenge.specific.org"
+
+    def test_no_match_returns_unchanged(self, authenticator):
+        authenticator._translation_table = {"other.com": "mapped.org"}
+        authenticator._translation_table_loaded = True
+        name = "_acme-challenge.example.com"
+        assert authenticator._translate_domain(name) == name
+
+    def test_partial_non_boundary_match_ignored(self, authenticator):
+        """ample.com must NOT match example.com."""
+        authenticator._translation_table = {"ample.com": "mapped.org"}
+        authenticator._translation_table_loaded = True
+        name = "_acme-challenge.example.com"
+        assert authenticator._translate_domain(name) == name
+
+    def test_subdomain_prefix_preserved(self, authenticator):
+        authenticator._translation_table = {"example.com": "target.org"}
+        authenticator._translation_table_loaded = True
+        result = authenticator._translate_domain("deep.sub._acme-challenge.example.com")
+        assert result == "deep.sub._acme-challenge.target.org"
+
+
 class TestPerform:
     def test_creates_txt_record(self, mock_client, authenticator):
         authenticator._perform("example.com", "_acme-challenge.example.com", "token123")
@@ -294,6 +421,15 @@ class TestPerform:
         mock_client.create_txt_record.assert_called_once()
         call_kwargs = mock_client.create_txt_record.call_args.kwargs
         assert "view" not in call_kwargs
+
+    def test_translates_validation_name(self, mock_client, authenticator):
+        authenticator._translation_table = {"example.com": "sub.example.org"}
+        authenticator._translation_table_loaded = True
+
+        authenticator._perform("example.com", "_acme-challenge.example.com", "token123")
+
+        call_kwargs = mock_client.create_txt_record.call_args.kwargs
+        assert call_kwargs["name"] == "_acme-challenge.sub.example.org"
 
 
 class TestCleanup:
@@ -351,3 +487,21 @@ class TestCleanup:
         mock_client.search_txt_records.assert_called_once_with(
             name="_acme-challenge.example.com", text="token123"
         )
+
+    def test_translates_validation_name(self, mock_client, authenticator):
+        authenticator._translation_table = {"example.com": "sub.example.org"}
+        authenticator._translation_table_loaded = True
+        mock_client.search_txt_records.return_value = [
+            {
+                "_ref": "record:txt/found1",
+                "name": "_acme-challenge.sub.example.org",
+                "text": "token123",
+            },
+        ]
+
+        authenticator._cleanup("example.com", "_acme-challenge.example.com", "token123")
+
+        mock_client.search_txt_records.assert_called_once_with(
+            name="_acme-challenge.sub.example.org", text="token123"
+        )
+        mock_client.delete_txt_record.assert_called_once_with("record:txt/found1")
