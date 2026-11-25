@@ -31,8 +31,10 @@ class Authenticator(dns_common.DNSAuthenticator):
         self.credentials = None
 
     @classmethod
-    def add_parser_arguments(cls, add, default_propagation_seconds: int = 60):
-        super().add_parser_arguments(add, default_propagation_seconds=60)
+    def add_parser_arguments(cls, add, default_propagation_seconds: int = 10):
+        super().add_parser_arguments(
+            add, default_propagation_seconds=default_propagation_seconds
+        )
         add(
             "credentials",
             help="Infoblox credentials INI file.",

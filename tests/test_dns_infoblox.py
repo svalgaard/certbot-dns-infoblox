@@ -61,8 +61,11 @@ class TestAddParserArguments:
         mock_add = MagicMock()
         with patch(
             "certbot_dns_infoblox.dns_infoblox.dns_common.DNSAuthenticator.add_parser_arguments"
-        ):
+        ) as mock_parent_add:
             Authenticator.add_parser_arguments(mock_add)
+        mock_parent_add.assert_called_once_with(
+            mock_add, default_propagation_seconds=10
+        )
         mock_add.assert_called_once_with(
             "credentials",
             help="Infoblox credentials INI file.",
