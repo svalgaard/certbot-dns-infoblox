@@ -74,6 +74,11 @@ dns_infoblox_password = 5f4dcc3b5aa765d61d8327deb882cf99
 # Optional: path to a custom CA bundle (file or directory) for SSL
 # verification.
 # dns_infoblox_ca_bundle = "/path/to/ca-bundle.crt"
+
+# Optional: path to a JSON file that maps domain suffixes to
+# replacement domains. Used for Infoblox ALIAS records where TXT
+# records must be created in a different zone.
+# dns_infoblox_translation_table = "/etc/letsencrypt/infoblox-translations.json"
 ```
 
 Restrict access to the file:
@@ -112,6 +117,34 @@ production), set `dns_infoblox_ssl_verify` to `false`:
 dns_infoblox_ssl_verify = false
 ```
 
+
+## ALIAS / Domain Translation
+
+Infoblox supports ALIAS records that forward DNS requests for one name
+to another. When such an alias is in place, the ACME `_acme-challenge`
+TXT record must be created in the *target* zone rather than the alias
+zone.
+
+To handle this, create a JSON file that maps domain suffixes to their
+replacement domains:
+
+```json
+{
+  "example.com": "subsite.example.org",
+  "site.example.org": "othersite.example.org"
+}
+```
+
+Then point the `dns_infoblox_translation_table` credential at that file:
+
+```ini
+dns_infoblox_translation_table = /etc/letsencrypt/infoblox-translations.json
+```
+
+With this configuration, a challenge for `_acme-challenge.example.com`
+will create a TXT record at `_acme-challenge.subsite.example.org`
+instead. The matching uses the longest domain suffix, respecting domain
+boundaries (i.e., `ample.com` does **not** match `example.com`).
 
 ## Examples
 
